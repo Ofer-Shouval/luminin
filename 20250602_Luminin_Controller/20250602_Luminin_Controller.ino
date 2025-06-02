@@ -31,11 +31,9 @@ Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(4, 8, PIN,
 
 
 
-// REPLACE WITH YOUR RECEIVER MAC Address
-uint8_t broadcastAddress1[] = { 0xF4, 0xCF, 0xA2, 0xD8, 0x16, 0x3f };
-uint8_t broadcastAddress2[] = { 0x24, 0x62, 0xAB, 0x14, 0xBA, 0x86};
 
-//24:62:ab:14:ba:86
+
+
 
 
 
@@ -91,7 +89,11 @@ unsigned long currentMillis;
 const unsigned long period = 50;
 
 
+// REPLACE WITH YOUR RECEIVER MAC Address
+uint8_t broadcastAddress1[] = { 0xF4, 0xCF, 0xA2, 0xD8, 0x16, 0x3f };
+uint8_t broadcastAddress2[] = { 0x24, 0x62, 0xAB, 0x14, 0xBA, 0x86};
 
+//24:62:ab:14:ba:86
 // Structure example to send data
 // Must match the receiver structure
 typedef struct struct_message {
@@ -147,23 +149,25 @@ void setup() {
   // Set device as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
 
-  // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
     Serial.println("Error initializing ESP-NOW");
     return;
   }
-
-  // Once ESPNow is successfully Init, we will register for Send CB to
-  // get the status of Trasnmitted packet
+  
   esp_now_register_send_cb(OnDataSent);
-
-  // Register peer
-  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
-  peerInfo.channel = 0;
+   
+  // register peer
+  peerInfo.channel = 0;  
   peerInfo.encrypt = false;
-
-  // Add peer
-  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+  // register first peer  
+  memcpy(peerInfo.peer_addr, broadcastAddress1, 6);
+  if (esp_now_add_peer(&peerInfo) != ESP_OK){
+    Serial.println("Failed to add peer");
+    return;
+  }
+  // register second peer  
+  memcpy(peerInfo.peer_addr, broadcastAddress2, 6);
+  if (esp_now_add_peer(&peerInfo) != ESP_OK){
     Serial.println("Failed to add peer");
     return;
   }
@@ -287,7 +291,8 @@ void loop() {
 
 
   //send ESPNOW data
-  esp_err_t result = esp_now_send(broadcastAddress1, (uint8_t *) &myData, sizeof(myData));
+    esp_err_t result = esp_now_send(0, (uint8_t *) &myData, sizeof(myData));
+  //esp_err_t result = esp_now_send(broadcastAddress1, (uint8_t *) &myData, sizeof(myData));
 
   //confirm data was sent successfully
   if (result == ESP_OK) {
